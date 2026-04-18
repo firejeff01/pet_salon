@@ -1,0 +1,254 @@
+@import './tokens.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #app { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, var(--color-pink-100) 0%, transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, #FFE7D6 0%, transparent 55%),
+    var(--color-bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  color: var(--color-brown-700);
+  letter-spacing: 0.01em;
+}
+h1 { font-size: var(--fs-3xl); }
+h2 { font-size: var(--fs-2xl); }
+h3 { font-size: var(--fs-xl); }
+h4 { font-size: var(--fs-lg); }
+
+p { margin: 0 0 var(--sp-3); }
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+a:hover { color: var(--color-primary-hover); }
+
+/* ========== Form controls ========== */
+
+label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-brown-700);
+  margin-bottom: var(--sp-1);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="search"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: var(--fs-md);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: var(--color-border-strong);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+input::placeholder, textarea::placeholder { color: var(--color-text-muted); }
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-brown-500) 50%),
+    linear-gradient(135deg, var(--color-brown-500) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px),
+                       calc(100% - 13px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+textarea { min-height: 96px; resize: vertical; }
+
+input[type="checkbox"], input[type="radio"] {
+  width: 16px; height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+fieldset {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4) var(--sp-5);
+  margin: 0 0 var(--sp-4);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+legend {
+  font-weight: 700;
+  color: var(--color-brown-700);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-md);
+}
+
+/* ========== Buttons ========== */
+
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  padding: 10px 20px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition),
+              background-color var(--transition), border-color var(--transition),
+              color var(--transition);
+  user-select: none;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+button:hover:not(:disabled),
+.btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+button:active:not(:disabled),
+.btn:active:not(:disabled) { transform: translateY(0); box-shadow: var(--shadow-sm); }
+
+button:disabled,
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button[type="button"].secondary,
+.btn.secondary {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  border-color: var(--color-border-strong);
+}
+button[type="button"].secondary:hover:not(:disabled),
+.btn.secondary:hover:not(:disabled) {
+  background-color: var(--color-pink-50);
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary);
+}
+
+button.ghost, .btn.ghost {
+  background-color: transparent;
+  color: var(--color-brown-700);
+  border-color: transparent;
+  box-shadow: none;
+}
+button.ghost:hover, .btn.ghost:hover {
+  background-color: var(--color-pink-50);
+  color: var(--color-primary);
+}
+
+button.danger, .btn.danger {
+  background-color: var(--color-danger);
+}
+button.danger:hover:not(:disabled), .btn.danger:hover:not(:disabled) {
+  background-color: #C8434D;
+}
+
+/* ========== Messages ========== */
+
+.error-message {
+  display: block;
+  color: var(--color-danger);
+  font-size: var(--fs-sm);
+  margin-top: 4px;
+}
+
+.error-message.api-error,
+.success-message {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--sp-3);
+}
+
+.error-message.api-error {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid #F5BFC4;
+}
+
+.success-message {
+  background-color: var(--color-success-bg);
+  color: #2E7D4C;
+  border: 1px solid #B9DDC6;
+}
+
+.warning-message {
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  margin-top: var(--sp-2);
+}
+
+/* ========== Card ========== */
+
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-6);
+}
+
+.page {
+  padding: var(--sp-6);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ========== Utilities ========== */
+
+.stack > * + * { margin-top: var(--sp-4); }
+.row { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+
+/* For the grooming form service price inline inputs and similar narrow number inputs */
+input[type="number"].narrow,
+.field-inline input {
+  max-width: 160px;
+}

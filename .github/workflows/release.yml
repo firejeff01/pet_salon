@@ -1,0 +1,92 @@
+name: Build & Release
+
+on:
+  # Push a version tag like v1.0.1 to build all platforms and attach installers
+  # to a GitHub Release.
+  push:
+    tags:
+      - 'v*'
+  # Manually trigger via Actions tab (no release is created — artifacts only)
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_glob: 'dist-electron/*.exe'
+            artifact_name: windows-installer
+          - os: macos-latest
+            artifact_glob: 'dist-electron/*.dmg'
+            artifact_name: macos-installer
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # On macOS, convert the icon PNGs into a proper .icns using native tools.
+      - name: Build mac icon (.icns)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p build/icon.iconset
+          cp build/icon-16.png       build/icon.iconset/icon_16x16.png
+          cp build/icon-32.png       build/icon.iconset/icon_16x16@2x.png
+          cp build/icon-32.png       build/icon.iconset/icon_32x32.png
+          cp build/icon-64.png       build/icon.iconset/icon_32x32@2x.png
+          cp build/icon-128.png      build/icon.iconset/icon_128x128.png
+          cp build/icon-256.png      build/icon.iconset/icon_128x128@2x.png
+          cp build/icon-256.png      build/icon.iconset/icon_256x256.png
+          cp build/icon-512.png      build/icon.iconset/icon_256x256@2x.png
+          cp build/icon-512.png      build/icon.iconset/icon_512x512.png
+          cp build/icon-1024.png     build/icon.iconset/icon_512x512@2x.png
+          iconutil --convert icns --output build/icon.icns build/icon.iconset
+          ls -la build/icon.icns
+
+      # Point the mac icon config at icon.icns only on macOS runner.
+      - name: Patch package.json mac icon
+        if: matrix.os == 'macos-latest'
+        run: |
+          node -e "const fs=require('fs'); const p=require('./package.json'); p.build.mac.icon='build/icon.icns'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2));"
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      # Puppeteer's .puppeteerrc.cjs will pull the platform-specific Chromium
+      # into backend/puppeteer-cache/ automatically during `npm install`.
+      - name: Verify Chromium downloaded
+        shell: bash
+        run: |
+          ls -la backend/puppeteer-cache/chrome/ || echo "no chromium cached"
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build installer
+        run: npm run dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_glob }}
+          retention-days: 14
+
+      # Attach installer to a GitHub Release when this was a tag push.
+      - name: Publish to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact_glob }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true

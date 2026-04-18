@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-electron/
+frontend/dist/
+
+# Puppeteer cache (Chromium binaries — redownloaded per-OS during CI)
+backend/puppeteer-cache/
+
+# Data (must not be committed — contains customer PII)
+data/
+backend/data/
+
+# Test artefacts
+coverage/
+tests/pdf-generator/baseline/*.diff.png
+
+# Logs
+*.log
+startup.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Local envs
+.env
+.env.local
+
+# Intermediate icon build
+build/icon.iconset/
+build/icon.icns

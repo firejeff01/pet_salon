@@ -1,0 +1,41 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest --verbose --forceExit",
+    "test:unit": "jest --verbose --forceExit",
+    "test:watch": "jest --watch --verbose",
+    "dev": "node src/index.js",
+    "start": "node src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "archiver": "^7.0.1",
+    "express": "^5.2.1",
+    "handlebars": "^4.7.9",
+    "nanoid": "^3.3.11",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^24.41.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "canvas": "^3.2.3",
+    "jest": "^30.3.0",
+    "pdf-to-img": "^6.0.0",
+    "pdfjs-dist": "^5.6.205",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0",
+    "supertest": "^7.2.2"
+  }
+}
