@@ -81,7 +81,7 @@
       "uninstallerIcon": "build/icon.ico"
     },
     "mac": {
-      "icon": "build/icon.ico",
+      "icon": "build/icon-1024.png",
       "target": "dmg",
       "category": "public.app-category.business"
     }

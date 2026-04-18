@@ -69,8 +69,8 @@ function New-IconPng {
 }
 
 $outDir = $PSScriptRoot
-foreach ($s in 256, 128, 64, 48, 32, 16) {
+foreach ($s in 1024, 512, 256, 128, 64, 48, 32, 16) {
     New-IconPng -Size $s -Path (Join-Path $outDir "icon-$s.png")
 }
-Copy-Item (Join-Path $outDir "icon-256.png") (Join-Path $outDir "icon.png") -Force
+Copy-Item (Join-Path $outDir "icon-1024.png") (Join-Path $outDir "icon.png") -Force
 Write-Host "Done."
