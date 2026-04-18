@@ -93,18 +93,26 @@ function buildViewModel(contractData) {
 
 function resolveChromiumExecutable() {
   // When packaged via electron-builder, puppeteer-cache/ lives next to the
-  // backend/ root.  We look up the first chrome.exe we can find so that the
-  // exact Chromium version doesn't have to be hard-coded.
+  // backend/ root.  Puppeteer's cache layout is:
+  //   chrome/win64-<ver>/chrome-win64/chrome.exe
+  //   chrome/mac-<ver>/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing
+  //   chrome/mac_arm64-<ver>/chrome-mac-arm64/...
+  //   chrome/linux-<ver>/chrome-linux64/chrome
   const cacheDir = path.join(__dirname, '..', '..', 'puppeteer-cache', 'chrome');
   if (!fs.existsSync(cacheDir)) return undefined;
-  const versions = fs.readdirSync(cacheDir).filter((d) => d.startsWith('win64-') || d.startsWith('mac-') || d.startsWith('linux-'));
+  const versions = fs.readdirSync(cacheDir).filter((d) =>
+    d.startsWith('win64-') || d.startsWith('mac-') || d.startsWith('mac_arm64-') || d.startsWith('linux-')
+  );
   for (const v of versions) {
-    const candidateWin = path.join(cacheDir, v, 'chrome-win64', 'chrome.exe');
-    const candidateMac = path.join(cacheDir, v, 'chrome-mac-arm64', 'Google Chrome for Testing.app', 'Contents', 'MacOS', 'Google Chrome for Testing');
-    const candidateLinux = path.join(cacheDir, v, 'chrome-linux64', 'chrome');
-    if (fs.existsSync(candidateWin)) return candidateWin;
-    if (fs.existsSync(candidateMac)) return candidateMac;
-    if (fs.existsSync(candidateLinux)) return candidateLinux;
+    const candidates = [
+      path.join(cacheDir, v, 'chrome-win64', 'chrome.exe'),
+      path.join(cacheDir, v, 'chrome-mac-arm64', 'Google Chrome for Testing.app', 'Contents', 'MacOS', 'Google Chrome for Testing'),
+      path.join(cacheDir, v, 'chrome-mac-x64',   'Google Chrome for Testing.app', 'Contents', 'MacOS', 'Google Chrome for Testing'),
+      path.join(cacheDir, v, 'chrome-linux64', 'chrome'),
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
   }
   return undefined;
 }
