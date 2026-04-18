@@ -6,87 +6,146 @@ on:
   push:
     tags:
       - 'v*'
-  # Manually trigger via Actions tab (no release is created — artifacts only)
-  workflow_dispatch: {}
+  # Manually trigger via Actions tab; pick which platform(s) to build.
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '要打包的平台'
+        required: true
+        default: 'windows'
+        type: choice
+        options:
+          - windows
+          - macos
+          - both
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            artifact_glob: 'dist-electron/*.exe'
-            artifact_name: windows-installer
-          - os: macos-latest
-            artifact_glob: 'dist-electron/*.dmg'
-            artifact_name: macos-installer
-
-    runs-on: ${{ matrix.os }}
-
+  # Compute which platforms should actually run based on trigger + input.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      build_windows: ${{ steps.decide.outputs.windows }}
+      build_macos:   ${{ steps.decide.outputs.macos }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - id: decide
+        shell: bash
+        run: |
+          event="${{ github.event_name }}"
+          platform="${{ github.event.inputs.platform }}"
+          if [ "$event" = "push" ]; then
+            # tag push = always build both
+            echo "windows=true" >> "$GITHUB_OUTPUT"
+            echo "macos=true"   >> "$GITHUB_OUTPUT"
+          else
+            case "$platform" in
+              windows) echo "windows=true"  >> "$GITHUB_OUTPUT"; echo "macos=false" >> "$GITHUB_OUTPUT" ;;
+              macos)   echo "windows=false" >> "$GITHUB_OUTPUT"; echo "macos=true"  >> "$GITHUB_OUTPUT" ;;
+              both)    echo "windows=true"  >> "$GITHUB_OUTPUT"; echo "macos=true"  >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+  build-windows:
+    needs: plan
+    if: needs.plan.outputs.build_windows == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      # On macOS, convert the icon PNGs into a proper .icns using native tools.
-      - name: Build mac icon (.icns)
-        if: matrix.os == 'macos-latest'
-        run: |
-          mkdir -p build/icon.iconset
-          cp build/icon-16.png       build/icon.iconset/icon_16x16.png
-          cp build/icon-32.png       build/icon.iconset/icon_16x16@2x.png
-          cp build/icon-32.png       build/icon.iconset/icon_32x32.png
-          cp build/icon-64.png       build/icon.iconset/icon_32x32@2x.png
-          cp build/icon-128.png      build/icon.iconset/icon_128x128.png
-          cp build/icon-256.png      build/icon.iconset/icon_128x128@2x.png
-          cp build/icon-256.png      build/icon.iconset/icon_256x256.png
-          cp build/icon-512.png      build/icon.iconset/icon_256x256@2x.png
-          cp build/icon-512.png      build/icon.iconset/icon_512x512.png
-          cp build/icon-1024.png     build/icon.iconset/icon_512x512@2x.png
-          iconutil --convert icns --output build/icon.icns build/icon.iconset
-          ls -la build/icon.icns
-
-      # Point the mac icon config at icon.icns only on macOS runner.
-      - name: Patch package.json mac icon
-        if: matrix.os == 'macos-latest'
-        run: |
-          node -e "const fs=require('fs'); const p=require('./package.json'); p.build.mac.icon='build/icon.icns'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2));"
+      # Cache the Chromium download so subsequent runs don't redownload 170MB+.
+      - name: Cache Puppeteer Chromium
+        id: puppeteer-cache
+        uses: actions/cache@v4
+        with:
+          path: backend/puppeteer-cache
+          key: puppeteer-win-${{ hashFiles('backend/package-lock.json') }}
 
       - name: Install dependencies
         run: npm run install:all
 
-      # Puppeteer's .puppeteerrc.cjs will pull the platform-specific Chromium
-      # into backend/puppeteer-cache/ automatically during `npm install`.
-      - name: Verify Chromium downloaded
-        shell: bash
-        run: |
-          ls -la backend/puppeteer-cache/chrome/ || echo "no chromium cached"
-
       - name: Run tests
+        env:
+          CI: 'true'
         run: npm test
 
       - name: Build installer
         run: npm run dist
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_glob }}
+          name: windows-installer
+          path: dist-electron/*.exe
           retention-days: 14
 
-      # Attach installer to a GitHub Release when this was a tag push.
       - name: Publish to Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact_glob }}
+          files: dist-electron/*.exe
           draft: false
-          prerelease: false
+          fail_on_unmatched_files: true
+
+  build-macos:
+    needs: plan
+    if: needs.plan.outputs.build_macos == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Build .icns from the PNG assets using native macOS tools.
+      - name: Build mac icon (.icns)
+        run: |
+          mkdir -p build/icon.iconset
+          cp build/icon-16.png    build/icon.iconset/icon_16x16.png
+          cp build/icon-32.png    build/icon.iconset/icon_16x16@2x.png
+          cp build/icon-32.png    build/icon.iconset/icon_32x32.png
+          cp build/icon-64.png    build/icon.iconset/icon_32x32@2x.png
+          cp build/icon-128.png   build/icon.iconset/icon_128x128.png
+          cp build/icon-256.png   build/icon.iconset/icon_128x128@2x.png
+          cp build/icon-256.png   build/icon.iconset/icon_256x256.png
+          cp build/icon-512.png   build/icon.iconset/icon_256x256@2x.png
+          cp build/icon-512.png   build/icon.iconset/icon_512x512.png
+          cp build/icon-1024.png  build/icon.iconset/icon_512x512@2x.png
+          iconutil --convert icns --output build/icon.icns build/icon.iconset
+
+      - name: Patch package.json mac icon
+        run: |
+          node -e "const fs=require('fs'); const p=require('./package.json'); p.build.mac.icon='build/icon.icns'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2));"
+
+      - name: Cache Puppeteer Chromium
+        uses: actions/cache@v4
+        with:
+          path: backend/puppeteer-cache
+          key: puppeteer-mac-${{ hashFiles('backend/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      - name: Run tests
+        env:
+          CI: 'true'
+        run: npm test
+
+      - name: Build installer
+        run: npm run dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: dist-electron/*.dmg
+          retention-days: 14
+
+      - name: Publish to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-electron/*.dmg
+          draft: false
           fail_on_unmatched_files: true

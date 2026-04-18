@@ -71,6 +71,8 @@
         }
       ]
     },
+    "compression": "store",
+    "compression": "store",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

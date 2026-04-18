@@ -125,7 +125,11 @@ async function renderToPdf(html) {
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // domcontentloaded is enough because the template embeds the font as a
+    // data URI and pulls no external assets. networkidle0 + the default
+    // 30s timeout is too tight for cold Chromium starts on CI runners.
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.evaluate(() => document.fonts && document.fonts.ready);
     await page.emulateMediaType('screen');
     const pdfBuffer = await page.pdf({
       format: 'A4',
